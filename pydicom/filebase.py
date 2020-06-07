@@ -173,5 +173,8 @@ class DicomBytesIO(DicomFileLike):
     def __init__(self, *args, **kwargs):
         super(DicomBytesIO, self).__init__(BytesIO(*args, **kwargs))
 
+    def getbuffer(self):
+        return self.parent.getbuffer()
+
     def getvalue(self):
         return self.parent.getvalue()

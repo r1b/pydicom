@@ -444,7 +444,7 @@ def write_data_element(fp, data_element, encodings=None):
     # Write element's tag
     fp.write_tag(data_element.tag)
 
-    # write into a buffer to avoid seeking back which can be expansive
+    # write into a buffer to avoid seeking back which can be expensive
     buffer = DicomBytesIO()
     buffer.is_little_endian = fp.is_little_endian
     buffer.is_implicit_VR = fp.is_implicit_VR
@@ -524,7 +524,7 @@ def write_data_element(fp, data_element, encodings=None):
         # unless is SQ with undefined length.
         fp.write_UL(0xFFFFFFFF if is_undefined_length else value_length)
 
-    fp.write(buffer.getvalue())
+    fp.write(buffer.getbuffer())
     if is_undefined_length:
         fp.write_tag(SequenceDelimiterTag)
         fp.write_UL(0)  # 4-byte 'length' of delimiter data item
@@ -714,7 +714,7 @@ def write_file_meta_info(fp, file_meta, enforce_standard=True):
 
     # Write the File Meta Information Group elements
     # first write into a buffer to avoid seeking back, that can be
-    # expansive and is not allowed if writing into a zip file
+    # expensive and is not allowed if writing into a zip file
     buffer = DicomBytesIO()
     buffer.is_little_endian = True
     buffer.is_implicit_VR = False
@@ -733,7 +733,7 @@ def write_file_meta_info(fp, file_meta, enforce_standard=True):
         buffer.seek(0)
         write_data_element(buffer, file_meta[0x00020000])
 
-    fp.write(buffer.getvalue())
+    fp.write(buffer.getbuffer())
 
 
 def _write_dataset(fp, dataset, write_like_original):
@@ -1007,7 +1007,7 @@ def dcmwrite(filename, dataset, write_like_original=True):
 
             # Compress the encoded data and write to file
             compressor = zlib.compressobj(wbits=-zlib.MAX_WBITS)
-            deflated = compressor.compress(buffer.parent.getvalue())
+            deflated = compressor.compress(buffer.parent.getbuffer())
             deflated += compressor.flush()
             if len(deflated) % 2:
                 deflated += b'\x00'
